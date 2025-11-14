@@ -144,11 +144,71 @@ listgpg () {
 	printf '%s\n' "${pw_list[@]}" | sort -n
 }
 
+# Apply icons to password paths based on path_icons array
+apply_icons() {
+	local path="$1"
+	local result="$path"
+
+	# Check if path_icons array exists and has elements
+	if [[ ${#path_icons[@]} -gt 0 ]]; then
+		# Split path into segments
+		IFS='/' read -ra segments <<< "$path"
+		local new_segments=()
+
+		for segment in "${segments[@]}"; do
+			local icon_applied=false
+			# Check each icon mapping
+			for key in "${!path_icons[@]}"; do
+				# If segment contains the key, prepend the icon
+				if [[ "$segment" == *"$key"* ]]; then
+					new_segments+=("${path_icons[$key]}$segment")
+					icon_applied=true
+					break
+				fi
+			done
+			# If no icon was applied, add segment as-is
+			if [[ "$icon_applied" == false ]]; then
+				new_segments+=("$segment")
+			fi
+		done
+
+		# Reconstruct path with icons
+		result=$(IFS='/'; echo "${new_segments[*]}")
+	fi
+
+	printf '%s\n' "$result"
+}
+
+# Remove icons from password paths to get the actual path
+strip_icons() {
+	local path="$1"
+	local result="$path"
+
+	# Check if path_icons array exists and has elements
+	if [[ ${#path_icons[@]} -gt 0 ]]; then
+		# Remove all icons from the path
+		for key in "${!path_icons[@]}"; do
+			local icon="${path_icons[$key]}"
+			result="${result//$icon/}"
+		done
+	fi
+
+	printf '%s\n' "$result"
+}
+
 # get all password files and output as newline-delimited text
 list_passwords() {
 	cd "${root}" || exit
 	mapfile -t pw_list < <(listgpg)
-	printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
+
+	# Apply icons if path_icons array is defined
+	if [[ ${#path_icons[@]} -gt 0 ]]; then
+		for pw in "${pw_list[@]%.gpg}"; do
+			apply_icons "$pw"
+		done | sort -n
+	else
+		printf '%s\n' "${pw_list[@]%.gpg}" | sort -n
+	fi
 }
 
 doClip () {
@@ -429,6 +489,8 @@ mainMenu () {
 		elif [[ $rofi_exit -eq 19 ]]; then
 			${basecommand}
 		elif [[ $rofi_exit -eq 0 ]]; then
+			# Strip icons from selected password before using it
+			selected_password="$(strip_icons "$selected_password")"
 			openURL
 		fi
 	else
@@ -478,6 +540,9 @@ mainMenu () {
 			25) helpMenu; return;;
 			26) ${basecommand} --bmarks; return;;
 		esac
+
+		# Strip icons from selected password before using it with pass command
+		selected_password="$(strip_icons "$selected_password")"
 
 		mapfile -t password_temp < <(PASSWORD_STORE_DIR="${root}" pass show "$selected_password")
 		password=${password_temp[0]}
