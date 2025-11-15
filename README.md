@@ -1,14 +1,64 @@
-# !!! This script is unmaintained !!!
+# rofi-pass (with Icon Mappings)
 
-# rofi-pass
+**This is a fork of the [original rofi-pass project](https://github.com/carnager/rofi-pass) with added icon mapping support.**
 
 A bash script to handle [Simple Password Store](http://www.passwordstore.org/)
 in a convenient way using [rofi](https://github.com/DaveDavenport/rofi).
 
 ![rofi-pass](https://53280.de/rofi/rofi-pass.png "rofi-pass in action")
 
+## What's New in This Fork
+
+### Icon Mappings
+
+This fork adds support for displaying icons (emojis, Font Awesome, or any Unicode icons) next to password entries based on keywords in the password path. 
+
+**How it works:**
+- Configure keyword-to-icon mappings in your config file using an associative array
+- Icons automatically appear when a password path segment matches a configured keyword
+- Supports emojis, Font Awesome icons, and any Unicode characters
+- Icons are prepended to the matching path segment (e.g., `school/network/info` becomes `school/🖥️ network/info` if "network" is mapped to 🖥️)
+
+**Example configuration:**
+
+Add this to your config file (`~/.config/rofi-pass/config`):
+
+```bash
+# Icon mappings for password paths
+# Add icons (emojis or fontawesome) that will be prepended to matching path segments
+# Format: ["searchterm"]="icon"
+# Example: If you have "school/network/info" and "network" is mapped to "🖥️ ",
+#          it will display as "school/🖥️ network/info"
+
+declare -A path_icons=(
+    ["network"]="🖥️ "
+    ["school"]="🏫 "
+    ["bank"]="🏦 "
+    ["email"]="📧 "
+    ["work"]="💼 "
+    ["personal"]="👤 "
+    ["social"]="👥 "
+    ["router"]="📡 "
+    ["server"]="🖥️ "
+    ["vpn"]="🔒 "
+    ["github"]=" "
+    ["google"]=" "
+    ["amazon"]=" "
+)
+```
+
+**Usage examples:**
+- Password path: `personal/github.com/myaccount` → Displays as: `👤 personal/ github.com/myaccount`
+- Password path: `work/email/corporate` → Displays as: `💼 work/📧 email/corporate`
+- Password path: `banking/chase` → Displays as: `🏦 banking/chase`
+
+You can use any Unicode characters including emojis, Font Awesome icons, or other icon fonts. See `config.example` for more examples.
+
+---
+
 ## Features
 
+* **Icon mappings** - Display custom icons based on password path keywords (NEW in this fork)
 * Open URLs of entries with hotkey
 * Add new Entries to Password Storage
 * Edit existing Entries
@@ -89,6 +139,7 @@ in a convenient way using [rofi](https://github.com/DaveDavenport/rofi).
 
   Alternative change the backend in the config file using
   `backend=wtype` or `clibpoard_backend=wl-clipboard`.
+
 ## Requirements
 
 * [pass](http://www.passwordstore.org/)
@@ -123,6 +174,24 @@ ROFI_PASS_CONFIG="$HOME/path/to/config" rofi-pass
 ```
 
 For an example configuration please take a look at the included `config.example` file.
+
+### Configuring Icon Mappings
+
+To configure icon mappings, add a `path_icons` associative array to your config file. The format is:
+
+```bash
+declare -A path_icons=(
+    ["keyword"]="icon"
+)
+```
+
+Where:
+- `keyword` is the text to search for in password path segments
+- `icon` is the Unicode character(s) to prepend (include trailing space for proper spacing)
+
+The script checks each segment of your password path (separated by `/`) and if a segment contains any of the keywords, it prepends the corresponding icon to that segment.
+
+**Note:** Make sure to include a trailing space after your icon for proper visual spacing.
 
 ## Extras
 
@@ -191,6 +260,12 @@ You may have to kill the GPG agent if it's still in a bad state:
 ```
 killall -9 gpg-agent
 ```
+
+## Credits
+
+This is a fork of [rofi-pass by carnager](https://github.com/carnager/rofi-pass). 
+
+**Note:** The original rofi-pass project is unmaintained. This fork continues development with new features like icon mappings.
 
 ## Alternative
 
